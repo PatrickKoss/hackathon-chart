@@ -1,0 +1,29 @@
+{{- if .Values.ingress.enabled -}}
+{{- $fullName := include "hackathon-apps.fullname" . -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "hackathon-apps.labels" . | nindent 4 }}
+  annotations:
+    ingress.kubernetes.io/rewrite-target: /
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: letsencrypt-prod-dns-challenge
+spec:
+  tls:
+    - hosts:
+        - {{ .Values.ingress.domain | quote }}
+      secretName: ws-{{ $fullName }}
+  rules:
+    - host: {{ .Values.ingress.domain | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "hackathon-apps.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}
+    {{- end }}
